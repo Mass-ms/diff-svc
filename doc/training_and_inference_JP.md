@@ -70,90 +70,90 @@ infer.pyを使用する場合、パラメータの変更方法は同様です。
 
 ## 2. データ作成・トレーニング
 ### 2.1 データ作成
->Currently, both WAV and Ogg format audio are supported. The sampling rate is better to be higher than 24kHz. The program will automatically handle issues with sampling rates and the number of channels. The sampling rate should not be lower than 16kHz (which usually will not). \
-The audio is better to be sliced into segments of 5-15 seconds. While there is no specific requirement for the audio length, it is best for them not to be too long or too short. The audio needs to be the target speaker's dry vocals without background music or other voices, preferably without excessive reverb, etc. If the audio is processed through vocal extraction, please try to keep the audio quality as high as possible. \
-Currently, only single-speaker training is supported. The total audio duration should be 3 hours or above. No additional labeling is required. Just place the audio files under raw_data_dir described below. The structure of this directory does not matter; the program will locate the files by itself.
+>現在、WAVとOggの両フォーマットのオーディオに対応しています。サンプリングレートは24kHz以上であることが望ましいです。サンプリングレートとチャンネル数の問題は、プログラムが自動的に処理します。サンプリングレートは16kHz以下であるべきではありません（通常はそうではありません）。 \
+音声は5～15秒のセグメントに分割するのがよいでしょう。音声の長さは特に決まりはありませんが、長すぎず短すぎずがベストです。音声は、BGMや他の声がない、できれば過度のリバーブなどがかかっていない、対象話者のドライなボーカルである必要があります。音声を抽出処理する場合は、できるだけ高音質でお願いします。 \
+現在、一人用のトレーニングのみ対応しています。音声の総時間は3時間以上であることが必要です。ラベル付けは必要ありません。音声ファイルは後述のraw_data_dirの下に置くだけです。このディレクトリの構造は重要ではなく、プログラムが勝手にファイルを探します。
 
 ### 2.2 ハイパーパラメータの編集
->First, make a backup copy of config.yaml (this file is for the 24kHz vocoder; use config_nsf.yaml for the 44.1kHz vocoder), then edit it: \
-The parameters below might be used (using project name `nyaru` as an example):
+>まず、config.yaml（このファイルは24kHzのボコーダ用です。44.1kHzのボコーダにはconfig_nsf.yamlを使います）のバックアップを取って、それを編集します。
+以下のようなパラメータを使用します（プロジェクト名nyaruを例としています）。
 ```
 K_step: 1000
-# The total number of diffusion steps. Changing this is not recommended.
+# 拡散ステップの総数。変更することはお勧めしません。
 
 binary_data_dir: data/binary/nyaru
-# The path to the pre-processed data: the last part needs to be changed to the current project name.
+# 処理前データのパス：最後の部分は、現在のプロジェクト名に変更する必要があります。
 
 config_path: training/config.yaml
-# The path to this config.yaml itself that you are using. Since data will be written into this file during the pre-processing process, this must be the full path to where the yaml file will be stored.
+# 使用するconfig.yaml自体へのパス。前処理でこのファイルにデータを書き込むので、yamlファイルが格納される場所へのフルパスである必要があります。
 
 choose_test_manually: false
-# Manually selecting a test set. It is disabled by default, and the program will automatically randomly select 5 audio files as the test set.
-# If set to true, enter the prefixes of the filenames of the test files in test_prefixes. The program will use the files starting with the corresponding prefix(es) as the test set.
-# This is a list and can contain multiple prefixes, e.g.
+# テストセットを手動で選択する。デフォルトでは無効になっており、プログラムは自動的に5つのオーディオファイルをテストセットとしてランダムに選択します。
+# true に設定すると、test_prefixes にテストファイルのファイル名の接頭辞を入力します。プログラムは、対応する接頭辞で始まるファイルをテストセットとして使用します。
+# これはリストであり、例えば複数の接頭辞を含むことができます。
 test_prefixes:
 - test
 - aaaa
 - 5012
 - speaker1024
-# IMPORTANT: the test set CAN NOT be empty. To avoid unintended effects, it is recommended to avoid manually selecting the test set.
+# 重要：テストセットを空にすることはできません。意図しない効果を避けるため、テストセットを手動で選択しないことをお勧めします。
 
 endless_ds:False
-# If your dataset is too small, each epoch will pass very fast. Setting this to True will treat 1000 epochs as a single one.
+# データセットが小さすぎる場合、各エポックが非常に速く過ぎてしまいます。これをTrueに設定すると、1000エポックを1つのエポックとして扱います。
 
 hubert_path: checkpoints/hubert/hubert.pt
-# The path to the HuBERT model, make sure this path is correct. In most cases, the decompressed checkpoints.zip archive would put the model under the right path, so no edits are needed. The torch version is now used for inference.
+# HuBERTモデルへのパス、このパスが正しいことを確認します。ほとんどの場合、解凍されたcheckpoints.zipアーカイブが正しいパスの下にモデルを置くので、編集は必要ありません。現在、torchバージョンは推論に使用されています。
 
 hubert_gpu:True
-# Whether or not to use GPU for HuBERT (a module in the model) during pre-processing. If set to False, CPU will be used, and the processing time will increase significantly. Note that whether GPU is used during inference is controlled separately in inference and not affected by this. Since HuBERT changed to the torch version, it is possible to run pre-processing and inference audio under 1 minute without exceeding VRAM limits on a 1060 6G GPU now, so it is usually not necessary to set it to False.
+# プリプロセスの際にHuBERT（モデル内のモジュール）にGPUを使用するかどうか。Falseに設定するとCPUが使用され、処理時間が大幅に増加する。なお、推論時にGPUを使用するかどうかは、推論時に別途制御され、この影響を受けない。HuBERTがtorch版に変わってから、現在1060 6GのGPUでVRAMの制限を超えずにプリプロセスと推論オーディオを1分以下で実行できるようになっているので、通常はFalseに設定する必要はないでしょう。
 
 lr: 0.0008
-# Initial learning rate: this value corresponds to a batch size of 88; if the batch size is smaller, you can lower this value a bit.
+# 初期学習率：この値はバッチサイズ88に対応する。バッチサイズが小さい場合は、この値を少し下げるとよい。
 
 decay_steps: 20000
-# For every 20,000 steps, the learning rate will decay to half the original. If the batch size is small, please increase this value.
+# 20,000ステップごとに、学習率は元の半分まで減衰します。バッチサイズが小さい場合は、この値を大きくしてください。
 
-# For a batch size of about 30-40, the recommended values are lr=0.0004，decay_steps=40000
+# 30-40程度のバッチサイズであれば、lr=0.0004，decay_steps=40000が推奨値です。
 
 max_frames: 42000
 max_input_tokens: 6000
 max_sentences: 88
 max_tokens: 128000
-# The batch size is calculated dynamically based on these parameters. If unsure about their exact meaning, you can change the max_sentences parameter only, which sets the maximum limit for the batch size to avoid exceeding VRAM limits.
+# バッチサイズは、これらのパラメータに基づいて動的に計算されます。これらのパラメータの正確な意味が不明な場合は、max_sentences パラメータのみを変更し、VRAM の制限を超えないようにバッチサイズの上限を設定することができます。
 
 pe_ckpt: checkpoints/0102_xiaoma_pe/model_ckpt_steps_60000.ckpt
-# Path to the pe model. Make sure this file exists. Refer to the inference section for its purpose.
+# peモデルへのパス。このファイルが存在することを確認する。用途は推論の項を参照。
 
 raw_data_dir: data/raw/nyaru
-# Path to the directory of the raw data before pre-processing. Please put the raw audio files under this directory. The structure inside does not matter, as the program will automatically parse it.
+# 前処理を行う前の生データのディレクトリへのパス。生の音声ファイルはこのディレクトリの下に置いてください。中の構造は、プログラムが自動的に解析しますので、問題ありません。
 
 residual_channels: 384
 residual_layers: 20
-# A group of parameters that control the core network size. The higher the values, the more parameters the network has and the slower it trains, but this does not necessarily lead to better results. For larger datasets, you can change the first parameter to 512. You can experiment with them on your own. However, it is best to leave them as they are if you are not sure what you are doing. 
+# コアネットワークの大きさを制御するパラメータ群。値を大きくすると、ネットワークのパラメータが増え、学習速度が遅くなりますが、必ずしも良い結果につながるとは限りません。より大きなデータセットの場合、最初のパラメータを512に変更することができる。自分で実験してみるといい。しかし、何をやっているのかよくわからない場合はそのままにしておくのが一番です。
 
 speaker_id: nyaru
-# The name of the target speaker. Currently, only single-speaker is supported. (This parameter is for reference only and has no functional impact)
+# 対象となる話者の名前。現在のところ、single-speakerのみサポートされている。(このパラメータは参照用であり、機能的な影響はない)
 
 use_crepe: true
-# Use CREPE to extract F0 for pre-processing. Enable it for better results, or disable it for faster processing.
+# CREPE を使用して、前処理に必要な F0 を抽出します。有効にしておくとより良い結果が得られ、無効にしておくとより高速に処理できます。
 
 val_check_interval: 2000
-# Inference on the test set and save checkpoints every 2000 steps.
+# テストセットで推論を行い、2000ステップごとにチェックポイントを保存する。
 
 vocoder_ckpt:checkpoints/0109_hifigan_bigpopcs_hop128
-# For 24kHz models, this should be the path to the directory of the corresponding vocoder. For 44.1kHz models, this should be the path to the corresponding vocoder file itself. Be careful, do not put the wrong one.
+# 24kHzの機種では、対応するボコーダーのディレクトリへのパスとします。44.1kHzの場合は、対応するボコーダーのファイルそのものへのパスです。間違えないように注意してください。
 
 work_dir: checkpoints/nyaru
-# Change the last part to the project name. (Or it can also be deleted or left completely empty to generate this directory automatically, but do not put some random names)
+# 最後の部分をプロジェクト名に変更します。(または、このディレクトリを自動的に生成するために、削除するか完全に空のままにしておくこともできますが、ランダムな名前をつけないようにします)
 
 no_fs2: true
-# Simplification of the network encoder. It can reduce the model size and speed up training. No direct evidence of damage to the network performance has been found so far. Enabled by default.
+# ネットワークエンコーダの簡略化。モデルサイズを小さくし、学習を高速化することができる。ネットワーク性能にダメージを与える直接的な証拠は今のところ見つかっていない。デフォルトで有効。
 
 ```
-> Do not edit the other parameters if you do not know that they do, even if you think you may know by judging from their names. 
+> 名前から判断してわかりそうな場合でも、何をしているかわからない場合は、他のパラメータを編集しないでください。
 
 ### 2.3 データ前処理
-Run the following commands under the diff-svc directory: \
+diff-svcディレクトリの下で以下のコマンドを実行します。 \
 #windows
 ```
 set PYTHONPATH=.
@@ -165,7 +165,7 @@ python preprocessing/binarize.py --config training/config.yaml
 export PYTHONPATH=.
 CUDA_VISIBLE_DEVICES=0 python preprocessing/binarize.py --config training/config.yaml
 ```
-For pre-processing, @IceKyrin has prepared a code for processing HuBERT and other features separately. If your VRAM is insufficient to do it normally, you can run `python ./network/hubert/hubert_model.py` first and then run the pre-processing commands, which can recognize the pre-processed HuBERT features.
+前処理については、@IceKyrinさんがHuBERTとその他の機能を別々に処理するコードを用意してくれています。VRAMが足りなくて普通にできない場合は、まず`python ./network/hubert/hubert_model.py` を実行して、それから前処理コマンドを実行すれば、前処理されたHuBERTの特徴を認識することができます。
 
 ### 2.4 トレーニング
 #windows
@@ -177,41 +177,41 @@ python run.py --config training/config.yaml --exp_name nyaru --reset
 ```
 CUDA_VISIBLE_DEVICES=0 python run.py --config training/config.yaml --exp_name nyaru --reset
 ```
->You need to change `exp_name` to your project name and edit the config path. Please make sure that the config file used for training is the same as the one used for pre-processing.\
-*Important*: After finishing training (on the cloud), if you did not pre-process the data locally, you will need to download the corresponding ckpt file AND the config file for inference. Do not use the one on your local machine since pre-processing writes data into the config file. Make sure the config file used for inference is the same as the one from pre-processing. 
+>`exp_name` をプロジェクト名に変更し、コンフィグパスを編集する必要があります。トレーニングに使用するコンフィグファイルは、プリプロセッシングに使用するコンフィグファイルと同じものであることを確認してください。\
+重要：学習終了後（クラウド上）、ローカルで前処理を行わなかった場合、対応するckptファイルと推論用の設定ファイルをダウンロードする必要があります。前処理は設定ファイルにデータを書き込むので、ローカルマシンにあるものは使用しないでください。推論に使用する設定ファイルは、プリプロセスで使用したものと同じであることを確認してください。
 
 ### 2.5 想定される問題
 
 >**2.5.1 'Upsample' オブジェクトに 'recompute_scale_factor' 属性がない。**\
-This issue was found in the torch version corresponding to cuda 11.3. If this issue occurs, please locate the `torch.nn.modules.upsampling.py` file in your python package (for example, in a conda environment, it is located under conda_dir\envs\environment_dir\Lib\site-packages\torch\nn\modules\upsampling.py), edit line 153-154 from
+この問題はcuda 11.3に対応するtorchのバージョンで発見されました。この問題が発生した場合、pythonパッケージ内の`torch.nn.modules.upsampling.py` ファイル（例えば、conda環境では、conda_direnvs_environment_dir﹑Libsite-packages﹑torch﹑nnmodules﹑upsampling.py ） の 153-154 行目を編集してください。
 ```
 return F.interpolate(input, self.size, self.scale_factor, self.mode, self.align_corners,recompute_scale_factor=self.recompute_scale_factor)
 ```
->to
+>を
 ```
 return F.interpolate(input, self.size, self.scale_factor, self.mode, self.align_corners)
 # recompute_scale_factor=self.recompute_scale_factor)
 ```
 
 >**2.5.2 'utils'という名前のモジュールがありません**\
-Please set up in your runtime environment (such as colab notebooks) as follows:
+実行環境（colab notebooksなど）で、以下のように設定してください。
 ```
 import os
 os.environ['PYTHONPATH']='.'
 !CUDA_VISIBLE_DEVICES=0 python preprocessing/binarize.py --config training/config.yaml
 ```
-Note that this must be done in the project's root directory.
+この作業は、プロジェクトのルートディレクトリで行う必要があることに注意してください。
 
 >**2.5.3 ライブラリ 'libsndfile.so' をロードすることができません。**\
-This is an error that may occur in a Linux environment. Please run the following command:
+Linux環境で発生する可能性のあるエラーです。以下のコマンドを実行してください。
 ```
 apt-get install libsndfile1 -y
 ```
 >**2.5.4 import 'consume_prefix_in_state_dict_if_present' を読み込むことができません。**\
-The current torch version is too old. Please upgrade to a higher version of torch.
+現在のtorchのバージョンは古すぎます。より高いバージョンのtorchにアップグレードしてください。
 
 >**2.5.5 データの前処理が遅い**\
-Check if `use_crepe` is enabled in config. Turning it off can significantly increase speed.\
-Check if `hubert_gpu` is enabled in config.
+configで `use_crepe` が有効になっているか確認してください。これをオフにすると、速度が大幅に向上します。\
+`hubert_gpu` が config で有効になっているか確認する。
 
 その他、ご質問等ございましたら、QQチャンネルやDiscordサーバーにご参加いただき、お気軽にお尋ねください。
